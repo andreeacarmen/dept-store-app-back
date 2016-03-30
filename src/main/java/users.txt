@@ -1,0 +1,2 @@
+johndoe,John Doe,FirstStore,pwd,true
+janedoe,Jane Doe,FirstStore,pwd,false
