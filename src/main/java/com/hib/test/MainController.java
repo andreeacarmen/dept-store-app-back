@@ -127,7 +127,6 @@ public class MainController {
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping("/user")
 	User getUserByUsername(@RequestParam(value="username",defaultValue="") String username){
-
 		return null;
 	}
 	
@@ -159,7 +158,12 @@ public class MainController {
 	
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping(value = "/query")
-	public List<Article> queryItems(@RequestParam(defaultValue = "all") String query){ 
+	public List<Article> queryItems(@RequestParam(required = true) String sid,
+									@RequestParam(defaultValue = "all") String query){ 
+		if(!AuthentificationManager.sessionsExists(sid)){
+			return null;
+		}
+		
 		Pattern p;
 		Matcher m;
 		if(query.compareTo("all") == 0){
@@ -184,7 +188,12 @@ public class MainController {
 	
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping("/item/{itemId}")
-	public Article getItem(@PathVariable Long itemId){
+	public Article getItem(@PathVariable Long itemId,
+							@RequestParam (required = true) String sid){
+		if(!AuthentificationManager.sessionsExists(sid)){
+			return null;
+		}
+		
 		return database.articleDao.find(itemId);
 	}
 	
@@ -198,7 +207,7 @@ public class MainController {
 			                   @RequestBody (required = true) List<posOrderArticle> posArticles){
 		//check if session
 		if(!AuthentificationManager.sessionsExists(sid)){
-			return "{\"Result\": \"Session expired!\"}";
+			return "{\"Result\": \"Session expired or user not logged in!\"}";
 		}
 		
 		List<OrderArticle> orderedArticles = new ArrayList<>();
