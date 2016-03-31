@@ -189,12 +189,16 @@ public class MainController {
 	}
 	
 	@CrossOrigin(origins = "http://localhost")
-	@RequestMapping("/order")
+	@RequestMapping(value = "/order",
+				method=RequestMethod.POST,
+				headers="Accept=application/json",
+				produces=MediaType.APPLICATION_JSON_VALUE,
+				consumes="*/*")
 	public String orderRequest(@RequestParam(value = "sid") String sid,
 			                   @RequestBody (required = true) List<posOrderArticle> posArticles){
 		//check if session
 		if(!AuthentificationManager.sessionsExists(sid)){
-			return null;
+			return "{\"Result\": \"Session expired!\"}";
 		}
 		
 		List<OrderArticle> orderedArticles = new ArrayList<>();
@@ -202,7 +206,7 @@ public class MainController {
 		for (posOrderArticle pA : posArticles){
 			Article article = database.articleDao.find(pA.getId());
 			if (article.getQuantity() < pA.getQuantity())
-				return "Not enough quantity";
+				return "{\"Result\": \"Order succeded!\"}";
 			
 			totalPrice += article.getPrice() * pA.getQuantity();
 			article.setQuantity(article.getQuantity() - pA.getQuantity());
@@ -221,7 +225,7 @@ public class MainController {
 		order.setTotalPrice(totalPrice);
 		database.orderDao.save(order);
 		
-		return "Order succeded!";
+		return "{\"Result\": \"Order succeded!\"}";
 	}
 	
 	@CrossOrigin(origins = "http://localhost")

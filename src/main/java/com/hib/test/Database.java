@@ -18,6 +18,15 @@ public class Database {
 		this.init();
 	}
 
+	private String[] products = {
+			"Banana", 
+			"Cartof", 
+			"Canapea", 
+			"Cutie", 
+			"Lapte", 
+			"Fasole",
+			"Cafea"
+	};
 	public void init() {
 		Supplier s1 = new Supplier("sup1");
 		Supplier s2 = new Supplier("sup2");
@@ -28,7 +37,19 @@ public class Database {
 		Article a1 = new Article(s1, "ceapa", 1000);
 		Article a2 = new Article(s1, "usturoi", 3000);
 		Article a3 = new Article(s2, "maimute", 1000);
-
+		
+		String prod = "Product";
+		for(int i = 0; i < 250; i++){
+			float price = (float)((int)(((float) Math.random() * 100 + 10) * 100))/100;
+			
+			Article a = new Article(s1, 
+					products[(int)(Math.random() * products.length)] + " tipul " + i, 
+					(int)(Math.random() * 1000)
+				);
+			a.setPrice(price);
+			articleDao.save(a);
+		}
+		
 		articleDao.save(a1);
 		articleDao.save(a2);
 		articleDao.save(a3);
