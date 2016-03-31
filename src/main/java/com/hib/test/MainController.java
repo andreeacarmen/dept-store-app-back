@@ -2,8 +2,11 @@ package com.hib.test;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hib.entities.Article;
+import com.hib.entities.Order;
+import com.hib.entities.OrderArticle;
 import com.hib.entities.User;
 
 class SessionToken{
@@ -90,15 +95,39 @@ class Product{
 	}
 }
 
+class posOrderArticle{
+	private Long id;
+	private int quantity;
+	
+	public posOrderArticle(){}
+	
+	public posOrderArticle(Long id, int quantity){
+		this.id = id;
+		this.quantity = quantity;
+	}
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
+	public int getQuantity() {
+		return quantity;
+	}
+	public void setQuantity(int quantity) {
+		this.quantity = quantity;
+	}
+}
+
 @RestController
 public class MainController {
 	private static Database database = Application.database;
+	
+	
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping("/user")
 	User getUserByUsername(@RequestParam(value="username",defaultValue="") String username){
-		 
-		
-		
+
 		return null;
 	}
 	
@@ -129,9 +158,28 @@ public class MainController {
 	
 	
 	@CrossOrigin(origins = "http://localhost")
-	@RequestMapping("/query")
+	@RequestMapping(value = "/query")
 	public List<Article> queryItems(@RequestParam(defaultValue = "all") String query){ 
-		return database.articleDao.findAll();
+		Pattern p;
+		Matcher m;
+		if(query.compareTo("all") == 0){
+			p = null;
+		} else {
+			p = Pattern.compile(".*" + query + ".*");
+		}
+		
+		List<Article> availableArticles = new ArrayList<>();
+		for (Article a : database.articleDao.findAll())
+			if(p != null){
+				if (a.getQuantity() > 0 && p.matcher(a.getArticleName()).matches()){
+					availableArticles.add(a);
+				}
+			} else {
+				if (a.getQuantity() > 0){
+					availableArticles.add(a);
+				}
+			}
+		return availableArticles;
 	}
 	
 	@CrossOrigin(origins = "http://localhost")
@@ -142,15 +190,78 @@ public class MainController {
 	
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping("/order")
-	public String orderRequest(@RequestParam(defaultValue = "") String sid,
-			                   @RequestBody (required = true) String order){
+	public String orderRequest(@RequestParam(value = "sid") String sid,
+			                   @RequestBody (required = true) List<posOrderArticle> posArticles){
 		//check if session
 		if(!AuthentificationManager.sessionsExists(sid)){
-			return "User not authenticated or session expired!";
+			return null;
 		}
+		
+		List<OrderArticle> orderedArticles = new ArrayList<>();
+		float totalPrice = 0;
+		for (posOrderArticle pA : posArticles){
+			Article article = database.articleDao.find(pA.getId());
+			if (article.getQuantity() < pA.getQuantity())
+				return "Not enough quantity";
+			
+			totalPrice += article.getPrice() * pA.getQuantity();
+			article.setQuantity(article.getQuantity() - pA.getQuantity());
+			database.articleDao.update(article);
+			OrderArticle orderArticle = new OrderArticle(article, pA.getQuantity());
+			orderedArticles.add(orderArticle);
+		}
+		
+		
+		Date date = new Date();
+		User user = AuthentificationManager.getUserFromSID(sid);
+		
+		Order order = new Order(date, "sent", user);
+		
+		order.setOrderedArticles(orderedArticles);
+		order.setTotalPrice(totalPrice);
+		database.orderDao.save(order);
 		
 		return "Order succeded!";
 	}
+	
+	@CrossOrigin(origins = "http://localhost")
+	@RequestMapping("/orders")
+	public List<Order> getAllOrders(@RequestParam(value="sid") String sid){
+		//check if session
+		if(!AuthentificationManager.sessionsExists(sid)){
+			return null;
+		}
+		
+		User user = AuthentificationManager.getUserFromSID(sid);
+		List<Order> allOrders = database.orderDao.findAll();
+		List<Order> userOrders = new ArrayList<>();
+		
+		for (Order aO : allOrders){
+			if (aO.getUser().equals(user)){
+				for(Order o : userOrders){
+					if(aO.getId() == o.getId()){
+						continue;
+					}
+				}
+				userOrders.add(aO);
+			}
+		}
+		
+		return userOrders;
+	}
+	
+	@CrossOrigin(origins = "http://localhost")
+	@RequestMapping("/order/{orderId}")
+	public Order getOrder(@PathVariable Long orderId){
+		return database.orderDao.find(orderId);
+	}
+	
+	@CrossOrigin(origins = "http://localhost")
+	@RequestMapping("/article/{articleId}")
+	public OrderArticle getOrderArticle(@PathVariable Long articleId){
+		return database.orderArticleDao.find(articleId);
+	}
+	
 	
 	@CrossOrigin(origins = "http://localhost")
 	@RequestMapping("/profile")

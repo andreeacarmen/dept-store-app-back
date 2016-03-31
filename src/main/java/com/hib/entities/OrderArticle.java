@@ -27,6 +27,11 @@ public class OrderArticle implements com.hib.entities.Entity {
     @JoinColumn(name="ORDER_ID")
     private Order order;
 
+    public OrderArticle(){
+    	this.article = null;
+        this.quantity = 0;
+    }
+    
     public OrderArticle(Article article, int quantity) {
         this.article = article;
         this.quantity = quantity;

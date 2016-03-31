@@ -1,6 +1,5 @@
 package com.hib.dao;
 
-import com.hib.entities.Entity;
 import com.hib.entities.Order;
 
 import java.util.List;

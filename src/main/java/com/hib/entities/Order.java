@@ -23,6 +23,8 @@ public class Order implements com.hib.entities.Entity {
 
     private String status;
     
+    private float totalPrice;
+    
     @OneToOne(mappedBy="order")
 //	@JoinColumn(name="USER_ID")
     private User user;
@@ -35,6 +37,7 @@ public class Order implements com.hib.entities.Entity {
         this.status = status;
         this.user = user;
     }
+    
     public void createList(){
     	this.orderedArticles = new LinkedList<>();
     }
@@ -77,4 +80,10 @@ public class Order implements com.hib.entities.Entity {
     public String toString(){
     	return "Order "+ this.status+" "+this.deliveryDate;
     }
+	public float getTotalPrice() {
+		return totalPrice;
+	}
+	public void setTotalPrice(float totalPrice) {
+		this.totalPrice = totalPrice;
+	}
 }
